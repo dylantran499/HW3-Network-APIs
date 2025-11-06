@@ -49,7 +49,7 @@ export default function HomeScreen() {
         renderItem={({ item }) => (
           <View style={styles.photoContainer}>
             <Image source={{ uri: item.src.medium }} style={styles.photo} />
-            <Text style={styles.photographer}>📷 {item.photographer}</Text>
+            <Text style={styles.photographer}> {item.photographer}</Text>
           </View>
         )}
         contentContainerStyle={styles.list}
