@@ -14,7 +14,7 @@ export async function searchPhotos(query, perPage = 15, page = 1) {
     }
 
     const data = await response.json();
-    return data.photos; // Array of photo objects
+    return data.photos;
   } catch (error) {
     console.error('Error fetching photos:', error);
     return [];
