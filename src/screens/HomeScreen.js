@@ -15,11 +15,11 @@ export default function HomeScreen({ navigation }) {
         const q = query(collection(db, 'favorites'));
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const favs = snapshot.docs.map((doc) => ({
-                id: doc.id, // Firestore doc ID
+                id: doc.id,
                 ...doc.data(),
             }));
         setFavorites(favs);
-        navigation.setParams({ favorites: favs }); // send to Favorites screen
+        navigation.setParams({ favorites: favs });
         });
         return unsubscribe;
     }, []);
