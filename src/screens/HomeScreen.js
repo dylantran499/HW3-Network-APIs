@@ -1,34 +1,36 @@
-import React, { useState } from 'react';
-import {View, Text, TextInput, FlatList, Image, Pressable, ActivityIndicator, StyleSheet} from 'react-native';
-import { searchPhotos } from '../pexels';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, FlatList, Image, Pressable, ActivityIndicator, StyleSheet} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { searchPhotos } from '../pexels';
 import { db } from '../firebaseConfig';
-import { collection, addDoc, deleteDoc, doc, onSnapshot, query} from 'firebase/firestore';
-
+import { collection, addDoc, deleteDoc, doc, onSnapshot, query } from 'firebase/firestore';
 
 export default function HomeScreen({ navigation }) {
     const [searchTerm, setSearchTerm] = useState('');
     const [photos, setPhotos] = useState([]);
-    const [favorites, setFavorites] = useState([]); // local favorites
+    const [favorites, setFavorites] = useState([]);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         const q = query(collection(db, 'favorites'));
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            const favs = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-            setFavorites(favs);
-            navigation.setParams({ favorites: favs });
+            const favs = snapshot.docs.map((doc) => ({
+                id: doc.id, // Firestore doc ID
+                ...doc.data(),
+            }));
+        setFavorites(favs);
+        navigation.setParams({ favorites: favs }); // send to Favorites screen
         });
         return unsubscribe;
     }, []);
 
-const handleSearch = async () => {
-    if (!searchTerm.trim()) return;
+    const handleSearch = async () => {
+        if (!searchTerm.trim()) return;
         setLoading(true);
         const results = await searchPhotos(searchTerm.trim());
         setPhotos(results);
         setLoading(false);
-};
+    };
 
 const toggleFavorite = async (photo) => {
     const existing = favorites.find((f) => f.photoId === photo.id);
@@ -38,15 +40,14 @@ const toggleFavorite = async (photo) => {
     else {
         await addDoc(collection(db, 'favorites'), {
             photoId: photo.id,
-            src: photo.src.medium,
+            imageUrl: photo.src.medium,
             photographer: photo.photographer,
         });
     }
 };
 
-
 const renderPhoto = ({ item }) => {
-    const isFavorite = favorites.some((p) => p.id === item.id);
+const isFavorite = favorites.some((f) => f.photoId === item.id);
         return (
             <View style={styles.photoContainer}>
             <Image source={{ uri: item.src.medium }} style={styles.photo} />
