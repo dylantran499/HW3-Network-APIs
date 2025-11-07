@@ -1,8 +1,19 @@
 import React from 'react';
 import { View, Text, Image, FlatList, StyleSheet } from 'react-native';
+import { db } from '../firebaseConfig';
+import { collection, query, onSnapshot } from 'firebase/firestore';
 
 export default function FavoriteScreen({ route }) {
-    const favorites = route.params?.favorites || [];
+    const [favorites, setFavorites] = useState([]);
+
+    useEffect(() => {
+        const q = query(collection(db, 'favorites'));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const favs = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+            setFavorites(favs);
+        });
+        return unsubscribe;
+    }, []);
 
     return (
         <View style={styles.container}>
@@ -17,7 +28,7 @@ export default function FavoriteScreen({ route }) {
                     renderItem={({ item }) => (
                         <View style={styles.photoContainer}>
                             <Image source={{ uri: item.src.medium }} style={styles.photo} />
-                            <Text style={styles.photographer}>📷 {item.photographer}</Text>
+                            <Text style={styles.photographer}> {item.photographer}</Text>
                         </View>
                     )}
                 />

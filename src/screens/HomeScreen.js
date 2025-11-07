@@ -2,12 +2,25 @@ import React, { useState } from 'react';
 import {View, Text, TextInput, FlatList, Image, Pressable, ActivityIndicator, StyleSheet} from 'react-native';
 import { searchPhotos } from '../pexels';
 import { Ionicons } from '@expo/vector-icons';
+import { db } from '../firebaseConfig';
+import { collection, addDoc, deleteDoc, doc, onSnapshot, query} from 'firebase/firestore';
+
 
 export default function HomeScreen({ navigation }) {
     const [searchTerm, setSearchTerm] = useState('');
     const [photos, setPhotos] = useState([]);
     const [favorites, setFavorites] = useState([]); // local favorites
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        const q = query(collection(db, 'favorites'));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const favs = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+            setFavorites(favs);
+            navigation.setParams({ favorites: favs });
+        });
+        return unsubscribe;
+    }, []);
 
 const handleSearch = async () => {
     if (!searchTerm.trim()) return;
@@ -17,18 +30,20 @@ const handleSearch = async () => {
         setLoading(false);
 };
 
-const toggleFavorite = (photo) => {
-    const exists = favorites.find((p) => p.id === photo.id);
-        if (exists) {
-            setFavorites(favorites.filter((p) => p.id !== photo.id));
-        } else {
-            setFavorites([...favorites, photo]);
-        }
+const toggleFavorite = async (photo) => {
+    const existing = favorites.find((f) => f.photoId === photo.id);
+    if (existing) {
+        await deleteDoc(doc(db, 'favorites', existing.id));
+    }
+    else {
+        await addDoc(collection(db, 'favorites'), {
+            photoId: photo.id,
+            src: photo.src.medium,
+            photographer: photo.photographer,
+        });
+    }
 };
 
-React.useEffect(() => {
-    navigation.setParams({ favorites });
-}, [favorites]);
 
 const renderPhoto = ({ item }) => {
     const isFavorite = favorites.some((p) => p.id === item.id);
@@ -36,7 +51,7 @@ const renderPhoto = ({ item }) => {
             <View style={styles.photoContainer}>
             <Image source={{ uri: item.src.medium }} style={styles.photo} />
                 <View style={styles.row}>
-                    <Text style={styles.photographer}>📷 {item.photographer}</Text>
+                    <Text style={styles.photographer}> {item.photographer}</Text>
                         <Pressable onPress={() => toggleFavorite(item)}>
                             <Ionicons
                                 name={isFavorite ? 'heart' : 'heart-outline'}
